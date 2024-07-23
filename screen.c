@@ -1,4 +1,4 @@
-#include "hacked.h"
+#include "grifoned.h"
 
 void set_fullscreen(Display *display, Window window)
 {

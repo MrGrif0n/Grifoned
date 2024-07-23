@@ -6,7 +6,7 @@ SRCS = main.c \
 LIBFT_NAME = ./libft/source/libft.a
 MINILIBX_NAME = ./minilibx-linux/libmlx_Linux.a
 OBJ_DIR = ./OBJ
-NAME = hacked
+NAME = grifoned
 OPTION = -o
 LIBFT = libft.a
 CC = cc
@@ -31,11 +31,9 @@ test: all
 	./cube3D ./maps/small.cub
 
 clean:
-	$(MAKE) clean -C ./libft/source/
 	rm -rf $(OBJ_DIR)
 
 fclean: clean
-	$(MAKE) fclean -C ./libft/source/
 	rm -f $(NAME)
 
 re:
