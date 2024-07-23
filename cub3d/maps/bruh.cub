@@ -1,0 +1,10 @@
+NO ./images/north.xpm
+SO ./images/south.xpm
+WE ./images/west.xpm
+EA ./images/east.xpm
+
+F 34,139,34 
+C 135,206,235 
+
+
+1
