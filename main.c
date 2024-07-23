@@ -1,98 +1,92 @@
-#include <mlx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-
-#include "./minilibx-linux/mlx.h"
 #include "hacked.h"
-#include "libft/include/libft.h"
 
-void null_create(t_create *create)
+
+int main(void)
 {
-    create->mlx = NULL;
-    create->win = NULL;
-    create->mouse.x = 0;
-    create->mouse.y = 0;
-}
+    t_data data;
+    Window root;
+    XEvent event;
+    Cursor invisible_cursor;
 
-void init_create(t_create *create)
-{
-    create->mlx = mlx_init();
-    create->mouse.x = (int *)ft_calloc(1, sizeof(int));
-    create->mouse.y = (int *)ft_calloc(1, sizeof(int));
-    create->screen.x = (int *)ft_calloc (1, sizeof(int));
-    create->screen.y = (int *)ft_calloc (1, sizeof(int));
-    mlx_get_screen_size(create->mlx, create->screen.x, create->screen.y);
-    create->screen.size_x = *create->screen.x;
-    create->screen.size_y = *create->screen.y;
+    // Initialize display
+    data.display = XOpenDisplay(NULL);
+    if (!data.display)
+    {
+        return (1);
+    }
 
-    create->win = mlx_new_window(create->mlx, create->screen.size_x, create->screen.size_y, "Hello World!");
-    mlx_mouse_move(create->mlx, create->win, create->screen.size_x / 2, create->screen.size_y / 2);
-}
+    // Get the screen's width and height
+    root = DefaultRootWindow(data.display);
+    data.screen_width = DisplayWidth(data.display, DefaultScreen(data.display));
+    data.screen_height = DisplayHeight(data.display, DefaultScreen(data.display));
 
-//mouse_hook should never let mouse to go out of the window
-int mouse_hook(int button, void *param)
-{
-    t_create *create = (t_create *)param;
- 
-    int old_x = create->screen.size_x / 2;
-	if (x == old_x)
-		return (0);
-	else if (x < old_x)
-		data->player.has_moved += rotate_player(data, -1);
-	else if (x > old_x)
-		data->player.has_moved += rotate_player(data, 1);
-	old_x = x;
-	return (0);
-}
+    // Create a window using Xlib
+    data.x11_window = XCreateSimpleWindow(data.display, root, 0, 0,
+                                          data.screen_width, data.screen_height,
+                                          1, BlackPixel(data.display, 0),
+                                          WhitePixel(data.display, 1));
 
-    //why does mlx_mouse_get_pos() segfault?
-    int pos_x = 0;
-    int pos_y = 0;
+    // Map the window to ensure it is displayed
+    XMapWindow(data.display, data.x11_window);
+    XFlush(data.display);
 
+    // Wait a short time to ensure the window is mapped
+    usleep(100000);
 
+    // Set window properties to make it fullscreen
+    set_fullscreen(data.display, data.x11_window);
 
-    // int pos_x = 0;
-    // pos_x = mlx_mouse_get_pos(create->mlx, create->win, create->mouse.x, create->mouse.y);
-    // create->mouse.x_cord = *create->mouse.x;
-    // create->mouse.y_cord = *create->mouse.y;
+    // Move the mouse to the center of the screen
+    XWarpPointer(data.display, None, data.x11_window, 0, 0, 0, 0, data.screen_width / 2, data.screen_height / 2);
+    XFlush(data.display);
 
-    // if (button == 1)
-    // {
-        pos_x = mlx_mouse_get_pos(create->mlx, create->win, create->mouse.x, create->mouse.y);
-        pos_y = mlx_mouse_get_pos(create->mlx, create->win, create->mouse.x, create->mouse.y);
-        create->mouse.x_cord = *create->mouse.x;
-        create->mouse.y_cord = *create->mouse.y;
-        printf("x: %d, y: %d\n", create->mouse.x_cord, create->mouse.y_cord);
-    // }
-    return (0);
-    button = 0;
-    param = NULL;
-    create = NULL;
-}
+    // Create and set the invisible cursor
+    invisible_cursor = create_invisible_cursor(data.display, root);
+    XDefineCursor(data.display, data.x11_window, invisible_cursor);
 
-void ft_free_create(t_create *create)
-{
-    if (create->mlx)
-        mlx_destroy_window(create->mlx, create->win);
-    if (create->mlx)
-        mlx_destroy_display(create->mlx);
-    free(create);
-}
+    // Select input events
+    XSelectInput(data.display, data.x11_window, PointerMotionMask | KeyPressMask);
 
-int main()
-{
-    t_create *create;
-    create = (t_create *)ft_calloc(1, sizeof(t_create));
+    // Initialize Konami code sequence
+    initialize_konami_code(&data);
 
-    null_create(create);
-    init_create(create);
-    // mlx_mouse_hide(create->mlx, create->win);
-    mlx_hook(create->win, 0, 0, mouse_hook, create);
+    // Grab special keys to prevent their default behavior
+    grab_special_keys(data.display, data.x11_window);
 
-    mlx_loop(create->mlx);
-    ft_free_create(create);
+    // Event loop
+    while (1)
+    {
+        XNextEvent(data.display, &event);
+        if (event.type == MotionNotify)
+        {
+            int x = event.xmotion.x;
+            int y = event.xmotion.y;
+            int center_x = data.screen_width / 2;
+            int center_y = data.screen_height / 2;
+
+            // Always move the mouse back to the center
+            if (x != center_x || y != center_y)
+            {
+                XWarpPointer(data.display, None, data.x11_window, 0, 0, 0, 0, center_x, center_y);
+                XFlush(data.display);
+            }
+        }
+        else if (event.type == KeyPress)
+        {
+            KeySym keysym = XLookupKeysym(&event.xkey, 0);
+            if (is_konami_key(keysym))
+            {
+                if (check_konami_code(&data, keysym))
+                {
+                    break; // Exit the loop if Konami code is detected
+                }
+            }
+        }
+    }
+
+    XUngrabKeyboard(data.display, CurrentTime);
+    XDestroyWindow(data.display, data.x11_window);
+    XFreeCursor(data.display, invisible_cursor);
+    XCloseDisplay(data.display);
     return (0);
 }

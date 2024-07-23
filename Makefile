@@ -1,4 +1,6 @@
 SRCS = main.c \
+	kanami.c \
+	screen.c \
 
 
 LIBFT_NAME = ./libft/source/libft.a
@@ -11,20 +13,15 @@ CC = cc
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRCS:.c=.o))
 CFLAGS = -Werror -Wextra -Wall -g -ggdb
 LFLAGS = -L./minilibx-linux -L/usr/lib/x86_64-linux-gnu -lmlx -lXext -lX11 -lm
-HIDDENFLAG = -DHIDDEN=0
 
 
-all: $(LIBFT_NAME)  $(NAME)
 
-$(NAME): $(OBJ) $(LIBFT_NAME) 
-	$(CC) $(OPTION) $(NAME) $(OBJ) $(LFLAGS)  $(LIBFT_NAME)
+all:  $(NAME)
+
+$(NAME): $(OBJ) 
+	$(CC) $(OPTION) $(NAME) $(OBJ) $(LFLAGS) 
 
 
-ignore_hidden: CFLAGS += $(HIDDENFLAG)
-ignore_hidden: $(LIBFT_NAME) $(NAME)
-
-$(LIBFT_NAME):
-	$(MAKE) all -C ./libft/source
 
 $(OBJ_DIR)/%.o: %.c
 	@test -d $(dir $@) || mkdir -p $(dir $@)
