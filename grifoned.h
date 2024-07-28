@@ -7,6 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <stdio.h>
+
+#define VIDEO_PATH "./vid/grifoned.mp4"
 
 typedef struct  s_data {
     Display     *display;
@@ -16,7 +19,6 @@ typedef struct  s_data {
     int         konami_index;
     KeySym      konami_code[10];
 }               t_data;
-
 
 void initialize_konami_code(t_data *data);
 bool check_konami_code(t_data *data, KeySym keysym);

@@ -22,22 +22,36 @@ void set_fullscreen(Display *display, Window window)
     XFlush(display);
 }
 
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
-
+// Function to create an invisible cursor
 Cursor create_invisible_cursor(Display *display, Window root)
 {
-    Pixmap blank;
-    XColor dummy;
-    char data[1] = {0};
-    Cursor cursor;
+    Pixmap bitmap_no_data;
+    XColor black;
+    static char no_data[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    blank = XCreateBitmapFromData(display, root, data, 1, 1);
-    if (blank == None)
+    // Create the bitmap (1x1 pixel)
+    bitmap_no_data = XCreateBitmapFromData(display, root, no_data, 8, 8);
+    if (bitmap_no_data == None)
     {
+        fprintf(stderr, "Failed to create bitmap for invisible cursor\n");
         return None;
     }
 
-    cursor = XCreatePixmapCursor(display, blank, blank, &dummy, &dummy, 0, 0);
-    XFreePixmap(display, blank);
-    return cursor;
+    black.red = black.green = black.blue = 0;
+
+    // Create the invisible cursor using the bitmap
+    Cursor invisible_cursor = XCreatePixmapCursor(display, bitmap_no_data, bitmap_no_data, &black, &black, 0, 0);
+    if (invisible_cursor == None)
+    {
+        fprintf(stderr, "Failed to create invisible cursor\n");
+    }
+
+    // Free the bitmap data
+    XFreePixmap(display, bitmap_no_data);
+
+    return invisible_cursor;
 }
+
